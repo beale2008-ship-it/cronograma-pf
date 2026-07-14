@@ -1,0 +1,17 @@
+{
+  "name": "Cronograma de Tareas Varias — Principios & Finales",
+  "short_name": "Cronograma P&F",
+  "description": "Configurador y cronograma imprimible de tareas para Principios & Finales.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#FBF8F4",
+  "theme_color": "#820A24",
+  "lang": "es-AR",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
