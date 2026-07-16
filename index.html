@@ -10,8 +10,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Cronograma P&F">
-<link rel="icon" href="icons/favicon.png" type="image/png">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -127,7 +127,7 @@
   }
 
   .days-row{ display:flex; gap:0; border:1px solid var(--brand); border-radius:8px 8px 0 0; overflow:hidden; }
-  .day-group{ display:flex; flex-direction:column; border-right:1px solid rgba(255,255,255,.5); flex:1 1 0; }
+  .day-group{ display:flex; flex-direction:column; border-right:2.5px solid var(--brand); flex:1 1 0; }
   .day-group:last-child{ border-right:none; }
   .day-head{
     background:var(--brand); color:var(--white); text-align:center; font-weight:700;
@@ -147,7 +147,7 @@
   .daynum-row{ display:flex; }
   .daynum-cell{
     text-align:center; font-weight:700; color:var(--brand); font-size:12px;
-    background:#EFEFEF; padding:3px 0; border-right:1px solid var(--line); border-top:1px solid var(--line);
+    background:#EFEFEF; padding:3px 0; border-right:2.5px solid var(--brand); border-top:1px solid var(--line);
     font-family:'Inter',sans-serif; flex:1 1 0;
   }
   .daynum-cell:last-child{ border-right:none; }
@@ -155,20 +155,22 @@
 
   .chk-lines{ display:flex; flex-direction:column; }
   .chk-row{ display:flex; }
-  .chk-day-group{ display:flex; border-right:1px solid var(--line); flex:1 1 0; }
+  .chk-day-group{ display:flex; border-right:2.5px solid var(--brand); flex:1 1 0; }
   .chk-day-group:last-child{ border-right:none; }
-  .chk-day-group.out-of-month{ background:#F7F6F5; opacity:.55; }
+  .chk-day-group.out-of-month{ background:#F7F6F5; }
+  .chk-day-group.out-of-month .chk-idx{ color:#C9C2BD; }
+  .chk-day-group.out-of-month .chk-box{ border-color:#C9C2BD; color:#C9C2BD; background:#F0EEEC; }
   .chk-cell{
     display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
     border-right:1px solid var(--line); background:var(--white); flex:1 1 0;
   }
   .chk-cell:last-child{ border-right:none; }
   .chk-cell.empty-slot{ background:transparent; }
-  .chk-idx{ font-size:7px; color:var(--brand); font-weight:700; line-height:1; margin-top:1px; }
+  .chk-idx{ font-size:9.5px; color:var(--brand); font-weight:700; line-height:1; margin-top:2px; }
   .chk-box{
-    width:12px; height:12px; margin:2px 0 3px; border:1.2px solid var(--brand); border-radius:3px;
+    width:16px; height:16px; margin:3px 0 4px; border:1.5px solid var(--brand); border-radius:3.5px;
     cursor:pointer; background:var(--white); display:flex; align-items:center; justify-content:center;
-    font-size:9px; font-weight:800; color:var(--brand); user-select:none;
+    font-size:11px; font-weight:800; color:var(--brand); user-select:none;
   }
   .chk-box.checked{ background:var(--brand-tint); }
 
@@ -484,6 +486,10 @@ function renderPrint(){
   const CAP = 6;
   const colsPerLine = Math.min(maxAssigned, CAP);
   const numLines = Math.ceil(maxAssigned / colsPerLine);
+  // Always reserve at least 2 lines of checkbox space, even if today's data
+  // only needs 1 — so adding tasks later doesn't suddenly shrink every row,
+  // and there's already visible room for a day to grow past its current count.
+  const renderLines = Math.max(numLines, 2);
 
   const container = document.getElementById('print-view');
   container.innerHTML = '';
@@ -542,7 +548,7 @@ function renderPrint(){
     const chkLines = document.createElement('div');
     chkLines.className = 'chk-lines';
 
-    for(let line = 0; line < numLines; line++){
+    for(let line = 0; line < renderLines; line++){
       const chkRow = document.createElement('div');
       chkRow.className = 'chk-row';
       DAY_NAMES.forEach((day, dIdx) => {
@@ -592,6 +598,7 @@ if(preloaded){
   state = window.__PRELOAD_STATE__;
   checks = window.__PRELOAD_CHECKS__ || {};
 }
+
 renderConfig();
 renderPrint();
 try{
