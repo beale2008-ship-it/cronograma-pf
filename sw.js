@@ -1,6 +1,6 @@
 // Cambiá este número cada vez que subas una nueva versión del index.html
 // para que los usuarios que ya instalaron la app reciban la actualización.
-const CACHE_NAME = "cronograma-pf-v2";
+const CACHE_NAME = "cronograma-pf-v3";
 const CORE_ASSETS = [
   "./",
   "./index.html",
