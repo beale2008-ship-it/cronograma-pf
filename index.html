@@ -127,7 +127,7 @@
   }
 
   .days-row{ display:flex; gap:0; border:1px solid var(--brand); border-radius:8px 8px 0 0; overflow:hidden; }
-  .day-group{ display:flex; flex-direction:column; border-right:2.5px solid var(--brand); flex:1 1 0; }
+  .day-group{ display:flex; flex-direction:column; border-right:1px solid rgba(255,255,255,.5); flex:1 1 0; }
   .day-group:last-child{ border-right:none; }
   .day-head{
     background:var(--brand); color:var(--white); text-align:center; font-weight:700;
@@ -147,7 +147,7 @@
   .daynum-row{ display:flex; }
   .daynum-cell{
     text-align:center; font-weight:700; color:var(--brand); font-size:12px;
-    background:#EFEFEF; padding:3px 0; border-right:2.5px solid var(--brand); border-top:1px solid var(--line);
+    background:#EFEFEF; padding:3px 0; border-right:1px solid var(--line); border-top:1px solid var(--line);
     font-family:'Inter',sans-serif; flex:1 1 0;
   }
   .daynum-cell:last-child{ border-right:none; }
@@ -155,7 +155,7 @@
 
   .chk-lines{ display:flex; flex-direction:column; }
   .chk-row{ display:flex; }
-  .chk-day-group{ display:flex; border-right:2.5px solid var(--brand); flex:1 1 0; }
+  .chk-day-group{ display:flex; border-right:1px solid var(--line); flex:1 1 0; }
   .chk-day-group:last-child{ border-right:none; }
   .chk-day-group.out-of-month{ background:#F7F6F5; }
   .chk-day-group.out-of-month .chk-idx{ color:#C9C2BD; }
@@ -183,6 +183,12 @@
   }
   .legend b{ color:var(--brand-deep); }
 
+  .grid-wrap{ position:relative; }
+  .day-divider{
+    position:absolute; top:0; bottom:0; width:2.5px; background:var(--brand);
+    pointer-events:none; z-index:2;
+  }
+
   .hidden{ display:none !important; }
 
   @media print{
@@ -195,6 +201,7 @@
       display:flex; flex-direction:column;
     }
     .days-row, .catalog-legend{ flex:0 0 auto; }
+    .grid-wrap{ flex:1 1 auto; display:flex; flex-direction:column; min-height:0; }
     .weeks-wrapper{ flex:1 1 auto; display:flex; flex-direction:column; min-height:0; }
     .week-block{ flex:1 1 0; display:flex; flex-direction:column; min-height:0; }
     .daynum-row{ flex:0 0 auto; }
@@ -482,6 +489,9 @@ function renderPrint(){
   title.textContent = `${state.title} — ${monthLabel}`;
   container.appendChild(title);
 
+  const gridWrap = document.createElement('div');
+  gridWrap.className = 'grid-wrap';
+
   const daysRow = document.createElement('div');
   daysRow.className = 'days-row';
   DAY_NAMES.forEach(day => {
@@ -490,14 +500,14 @@ function renderPrint(){
     grp.innerHTML = `<div class="day-head">${day.toUpperCase()}</div>`;
     daysRow.appendChild(grp);
   });
-  container.appendChild(daysRow);
+  gridWrap.appendChild(daysRow);
 
   const catalogLegend = document.createElement('div');
   catalogLegend.className = 'catalog-legend';
   catalogLegend.innerHTML = state.catalog.map((t, i) =>
     `<span class="chip"><b>${i+1}.</b> ${escapeHtml(t.text) || '(sin describir)'}${t.freq > 1 ? ' <i>(c/' + t.freq + ' sem.)</i>' : ''}</span>`
   ).join('');
-  container.appendChild(catalogLegend);
+  gridWrap.appendChild(catalogLegend);
 
   const weeksWrapper = document.createElement('div');
   weeksWrapper.className = 'weeks-wrapper';
@@ -563,7 +573,16 @@ function renderPrint(){
 
     weeksWrapper.appendChild(block);
   });
-  container.appendChild(weeksWrapper);
+  gridWrap.appendChild(weeksWrapper);
+
+  for(let i = 1; i < DAY_NAMES.length; i++){
+    const divider = document.createElement('div');
+    divider.className = 'day-divider';
+    divider.style.left = `calc(${(i / DAY_NAMES.length) * 100}% - 1.25px)`;
+    gridWrap.appendChild(divider);
+  }
+
+  container.appendChild(gridWrap);
 
   const legend = document.createElement('div');
   legend.className = 'legend';
