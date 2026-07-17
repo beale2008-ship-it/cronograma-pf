@@ -285,7 +285,6 @@ let state = {
     "Limpieza de vidrios y puertas",
     "Limpieza de bodega"
   ],
-  // assignments[dayName] = array of catalog indices (0-based) assigned to that day
   assignments: {
     "Lunes":     [0,1],
     "Martes":    [0,2,3,4],
@@ -295,14 +294,10 @@ let state = {
   }
 };
 
-// checkbox state, keyed "week-dayIdx-catalogIdx"
 let checks = {};
 
 const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
-// ---------------------------------------------------------------------
-// View switching
-// ---------------------------------------------------------------------
 function showView(view){
   document.getElementById('config-view').classList.toggle('hidden', view !== 'config');
   document.getElementById('print-view').classList.toggle('hidden', view !== 'print');
@@ -311,10 +306,6 @@ function showView(view){
   if(view === 'print') renderPrint();
 }
 
-// The print button can be clicked from either tab. Force-switch to the
-// print view first (it's hidden via display:none otherwise, which would
-// print a blank page), then give the browser a moment to render before
-// opening the print dialog.
 function printCronograma(){
   showView('print');
   setTimeout(() => {
@@ -326,10 +317,6 @@ function printCronograma(){
   }, 60);
 }
 
-// The embedded chat preview often runs this page inside a sandboxed iframe,
-// which silently blocks window.print() (no dialog, no error). Opening a real,
-// top-level browser tab side-steps that sandbox entirely. We hand the new tab
-// a snapshot of the current configuration so it opens already filled in.
 function openInNewTab(){
   try{
     const preload = `<script>window.__PRELOAD_STATE__=${JSON.stringify(state)};window.__PRELOAD_CHECKS__=${JSON.stringify(checks)};<\/script>`;
@@ -356,9 +343,6 @@ function escapeHtml(s){
   return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ---------------------------------------------------------------------
-// Config view rendering
-// ---------------------------------------------------------------------
 function renderConfig(){
   document.getElementById('cfg-title').value = state.title;
   const tb = document.getElementById('topbar-title');
@@ -386,7 +370,7 @@ function renderCatalogList(){
 
 function updateCatalogTask(i, value){
   state.catalog[i] = value;
-  renderAssignTable(); // labels may have changed
+  renderAssignTable();
 }
 
 function addCatalogTask(){
@@ -401,7 +385,6 @@ function removeCatalogTask(i){
     return;
   }
   state.catalog.splice(i, 1);
-  // fix assignments: remove this index, shift down higher indices
   DAY_NAMES.forEach(day => {
     state.assignments[day] = state.assignments[day]
       .filter(idx => idx !== i)
@@ -434,9 +417,6 @@ function toggleAssignment(day, catIdx, isChecked){
   }
 }
 
-// ---------------------------------------------------------------------
-// Date logic — official calendar weeks (Mon-Fri), grey days outside month
-// ---------------------------------------------------------------------
 function parseDate(str){
   const [y,m,d] = str.split('-').map(Number);
   return new Date(y, m-1, d);
@@ -465,9 +445,6 @@ function buildCalendarWeeks(refDate){
   return { weeks, month, year };
 }
 
-// ---------------------------------------------------------------------
-// Print view rendering
-// ---------------------------------------------------------------------
 function toggleCheck(key, el){
   checks[key] = !checks[key];
   el.classList.toggle('checked', checks[key]);
@@ -480,21 +457,14 @@ function renderPrint(){
   const { weeks, month: targetMonth } = buildCalendarWeeks(startDate);
   const maxAssigned = Math.max(1, ...DAY_NAMES.map(d => state.assignments[d].length));
 
-  // Prevent columns from getting too narrow: cap sub-columns per line at CAP.
-  // If a day ever needs more than CAP tasks, extra tasks wrap onto an additional
-  // line underneath instead of squeezing every day's columns thinner.
   const CAP = 6;
   const colsPerLine = Math.min(maxAssigned, CAP);
   const numLines = Math.ceil(maxAssigned / colsPerLine);
-  // Always reserve at least 2 lines of checkbox space, even if today's data
-  // only needs 1 — so adding tasks later doesn't suddenly shrink every row,
-  // and there's already visible room for a day to grow past its current count.
   const renderLines = Math.max(numLines, 2);
 
   const container = document.getElementById('print-view');
   container.innerHTML = '';
 
-  // Header
   const eyebrow = document.createElement('p');
   eyebrow.className = 'sheet-eyebrow';
   eyebrow.textContent = 'Principios & Finales';
@@ -505,7 +475,6 @@ function renderPrint(){
   title.textContent = `${state.title} — ${monthLabel}`;
   container.appendChild(title);
 
-  // Day header row
   const daysRow = document.createElement('div');
   daysRow.className = 'days-row';
   DAY_NAMES.forEach(day => {
@@ -516,7 +485,6 @@ function renderPrint(){
   });
   container.appendChild(daysRow);
 
-  // Catalog legend — single shared listing, numbered, not repeated per day
   const catalogLegend = document.createElement('div');
   catalogLegend.className = 'catalog-legend';
   catalogLegend.innerHTML = state.catalog.map((t, i) =>
@@ -524,7 +492,6 @@ function renderPrint(){
   ).join('');
   container.appendChild(catalogLegend);
 
-  // Weeks wrapper (no week-number label column)
   const weeksWrapper = document.createElement('div');
   weeksWrapper.className = 'weeks-wrapper';
 
@@ -532,7 +499,6 @@ function renderPrint(){
     const block = document.createElement('div');
     block.className = 'week-block';
 
-    // day-number row
     const dnRow = document.createElement('div');
     dnRow.className = 'daynum-row';
     week.forEach(date => {
@@ -544,7 +510,6 @@ function renderPrint(){
     });
     block.appendChild(dnRow);
 
-    // checkbox lines — one or more stacked lines of `colsPerLine` sub-columns per day
     const chkLines = document.createElement('div');
     chkLines.className = 'chk-lines';
 
@@ -583,16 +548,12 @@ function renderPrint(){
   });
   container.appendChild(weeksWrapper);
 
-  // Legend — brief
   const legend = document.createElement('div');
   legend.className = 'legend';
   legend.innerHTML = `<b>Cómo usar:</b> el número sobre cada casillero es el de la tarea (ver arriba). Gris = fuera de mes.`;
   container.appendChild(legend);
 }
 
-// ---------------------------------------------------------------------
-// Init
-// ---------------------------------------------------------------------
 const preloaded = !!window.__PRELOAD_STATE__;
 if(preloaded){
   state = window.__PRELOAD_STATE__;
@@ -607,16 +568,12 @@ try{
 } catch(e){}
 
 if(preloaded){
-  // Opened from "Abrir en pestaña nueva": jump straight to the print view
-  // and trigger the print dialog once the layout has settled.
   setTimeout(() => {
     showView('print');
     setTimeout(() => window.print(), 250);
   }, 150);
 }
 
-// PWA: register service worker so the app can be installed and works offline.
-// Silently no-ops if the browser doesn't support it or it's blocked (e.g. file://).
 if('serviceWorker' in navigator){
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').catch(() => {});
