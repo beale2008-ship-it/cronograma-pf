@@ -241,7 +241,7 @@
     <div id="config-view">
       <div class="intro">
         <h2>Configuración</h2>
-        <p>Definí el título, la fecha de inicio, el catálogo de tareas (numerado, una sola vez) y qué tareas corresponden a cada día. El cronograma se arma solo.</p>
+        <p>Definí el título, la fecha de inicio, el catálogo de tareas (numerado, una sola vez) y qué tareas corresponden a cada día. El cronograma se arma solo y todo se guarda automáticamente en este dispositivo.</p>
       </div>
 
       <div class="field-card">
@@ -258,7 +258,7 @@
 
       <div class="field-card">
         <p class="section-title">Catálogo de tareas</p>
-        <p class="section-sub">Cada tarea tiene un número fijo, sin importar en cuántos días se repita. Elegí cada cuántas semanas corresponde.</p>
+        <p class="section-sub">Cada tarea tiene un número fijo, sin importar en cuántos días se repita. Elegí cada cuántas semanas corresponde. Una tarea nueva aparece en el cronograma recién cuando la marcás en algún día (tabla de abajo).</p>
         <div class="catalog-list" id="catalog-list"></div>
         <button class="add-task" onclick="addCatalogTask()">+ Agregar tarea al catálogo</button>
       </div>
@@ -300,6 +300,39 @@ let state = {
 
 let checks = {};
 
+// ---------------------------------------------------------------------
+// Persistence: guarda configuración y tildes en este navegador/dispositivo
+// ---------------------------------------------------------------------
+const STORAGE_KEY = 'cronograma-pf-estado-v1';
+
+function saveState(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ state, checks }));
+  } catch(e){}
+}
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return;
+    const saved = JSON.parse(raw);
+    const s = saved && saved.state;
+    if(!s || typeof s.title !== 'string' || typeof s.monthStart !== 'string') return;
+    if(!Array.isArray(s.catalog) || s.catalog.length === 0) return;
+    const catalog = s.catalog.map(t => ({
+      text: typeof t === 'string' ? t : (t && typeof t.text === 'string' ? t.text : ''),
+      freq: (t && [1,2,3,4].includes(t.freq)) ? t.freq : 1
+    }));
+    const assignments = {};
+    DAY_NAMES.forEach(day => {
+      const arr = (s.assignments && Array.isArray(s.assignments[day])) ? s.assignments[day] : [];
+      assignments[day] = arr.filter(idx => Number.isInteger(idx) && idx >= 0 && idx < catalog.length);
+    });
+    state = { title: s.title, monthStart: s.monthStart, catalog, assignments };
+    checks = (saved.checks && typeof saved.checks === 'object') ? saved.checks : {};
+  } catch(e){}
+}
+
 const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
 function showView(view){
@@ -336,11 +369,12 @@ function openInNewTab(){
   }
 }
 
-function onDateChange(val){ state.monthStart = val; }
+function onDateChange(val){ state.monthStart = val; saveState(); }
 function onTitleChange(val){
   state.title = val;
   const tb = document.getElementById('topbar-title');
   if(tb) tb.textContent = val || 'Cronograma de Tareas Varias';
+  saveState();
 }
 
 function escapeHtml(s){
@@ -379,15 +413,18 @@ function renderCatalogList(){
 
 function updateCatalogText(i, value){
   state.catalog[i].text = value;
+  saveState();
   renderAssignTable();
 }
 
 function updateCatalogFreq(i, value){
   state.catalog[i].freq = parseInt(value, 10) || 1;
+  saveState();
 }
 
 function addCatalogTask(){
   state.catalog.push({ text: "", freq: 1 });
+  saveState();
   renderCatalogList();
   renderAssignTable();
 }
@@ -403,6 +440,9 @@ function removeCatalogTask(i){
       .filter(idx => idx !== i)
       .map(idx => idx > i ? idx - 1 : idx);
   });
+  // los tildes guardados dependen del número de tarea: se reinician para no quedar corridos
+  checks = {};
+  saveState();
   renderCatalogList();
   renderAssignTable();
 }
@@ -429,6 +469,7 @@ function toggleAssignment(day, catIdx, isChecked){
   } else {
     state.assignments[day] = arr.filter(idx => idx !== catIdx);
   }
+  saveState();
 }
 
 function parseDate(str){
@@ -463,6 +504,7 @@ function toggleCheck(key, el){
   checks[key] = !checks[key];
   el.classList.toggle('checked', checks[key]);
   el.textContent = checks[key] ? '✕' : '';
+  saveState();
 }
 
 function renderPrint(){
@@ -590,6 +632,7 @@ function renderPrint(){
   container.appendChild(legend);
 }
 
+loadState();
 const preloaded = !!window.__PRELOAD_STATE__;
 if(preloaded){
   state = window.__PRELOAD_STATE__;
